@@ -5,15 +5,41 @@ import "io/ioutil"
 import "os"
 import "luago/binchunk"
 import . "luago/vm"
+import . "luago/api"
+import "luago/state"
 
 //简化版的模拟读取chunk
 func main(){
 	if len(os.Args) > 1 {
+		fmt.Printf("\nLua字节流测试\n")
 		data,err := ioutil.ReadFile(os.Args[1])
 		if err != nil { panic(err) }
 		proto := binchunk.Undump(data)
 		list(proto)
 	}
+
+	fmt.Printf("\n栈测试\n")
+	ls := state.New()
+
+	ls.PushBoolean(true)
+	printStack(ls)
+	ls.PushInteger(10)
+	printStack(ls)
+	ls.PushNil()
+	printStack(ls)
+	ls.PushString("hello")
+	printStack(ls)
+	ls.PushValue(-4)
+	printStack(ls)
+	ls.Replace(3)
+	printStack(ls)
+	ls.SetTop(6)
+	printStack(ls)
+	ls.Remove(-3)
+	printStack(ls)
+	ls.SetTop(-5)
+	printStack(ls)
+
 }
 
 //显示chunck的参数
@@ -130,4 +156,23 @@ func printOperands(i Instruction) {
 		ax := i.Ax()
 		fmt.Printf("%d", -1-ax)
 	}
+}
+
+
+func printStack(ls LuaState) {
+	top := ls.GetTop()
+	for i := 1; i <= top; i++ {
+		t := ls.Type(i)
+		switch t {
+		case LUA_TBOOLEAN:
+			fmt.Printf("[%t]", ls.ToBoolean(i))
+		case LUA_TNUMBER:
+			fmt.Printf("[%g]", ls.ToNumber(i))
+		case LUA_TSTRING:
+			fmt.Printf("[%q]", ls.ToString(i))
+		default: // other values
+			fmt.Printf("[%s]", ls.TypeName(t))
+		}
+	}
+	fmt.Println()
 }
