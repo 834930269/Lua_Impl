@@ -8,6 +8,23 @@ import . "luago/vm"
 import . "luago/api"
 import "luago/state"
 
+func luaMain(proto *binchunk.Prototype){
+	nRegs := int(proto.MaxStackSize)
+	ls := state.New(nRegs+8,proto)
+	ls.SetTop(nRegs)
+	for{
+		pc := ls.PC()					//获取指令pc位置
+		inst := Instruction(ls.Fetch())	//从指令流中获取一条指令
+		if inst.OpCode() != OP_RETURN {	//不是Return就继续
+			inst.Execute(ls)			//执行虚拟机第一条指令
+			fmt.Printf("[%02d] %s ",pc+1,inst.OpName())
+			printStack(ls)
+		} else {
+			break
+		}
+	}
+}
+
 //简化版的模拟读取chunk
 func main(){
 	if len(os.Args) > 1 {
@@ -16,26 +33,9 @@ func main(){
 		if err != nil { panic(err) }
 		proto := binchunk.Undump(data)
 		list(proto)
+		fmt.Printf("\nLua字节流指令执行测试\n")
+		luaMain(proto)
 	}
-
-	fmt.Printf("\n栈测试\n")
-	ls := state.New()
-	ls.PushInteger(1)
-	ls.PushString("2.0")
-	ls.PushString("3.0")
-	ls.PushNumber(4.0)
-	printStack(ls)
-
-	ls.Arith(LUA_OPADD)
-	printStack(ls)
-	ls.Arith(LUA_OPBNOT)
-	printStack(ls)
-	ls.Len(2)
-	printStack(ls)
-	ls.Concat(3)
-	printStack(ls)
-	ls.PushBoolean(ls.Compare(1, 2, LUA_OPEQ))
-	printStack(ls)
 }
 
 

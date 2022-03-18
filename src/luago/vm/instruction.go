@@ -1,5 +1,7 @@
 package vm
 
+import "luago/api"
+
 type Instruction uint32
 
 const MAXARG_Bx = 1 << 18 - 1	
@@ -48,4 +50,13 @@ func (self Instruction) BMode() byte {
 
 func (self Instruction) CMode() byte {
 	return opcodes[self.OpCode()].argCMode
+}
+
+func (self Instruction) Execute(vm api.LuaVM) {
+	action := opcodes[self.OpCode()].action
+	if action != nil {
+		action(self, vm)
+	} else {
+		panic(self.OpName())
+	}
 }

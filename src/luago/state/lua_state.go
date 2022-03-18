@@ -1,13 +1,18 @@
 package state
+import "luago/binchunk"
 
 //LuaState的实现类
 
 type luaState struct{
 	stack *luaStack
+	proto *binchunk.Prototype
+	pc 	   int
 }
 
-func New() *luaState{
+func New(stackSize int,proto *binchunk.Prototype) *luaState{
 	return &luaState{
 		stack: newLuaStack(20),
+		proto: proto,
+		pc:    0,
 	}
 }
