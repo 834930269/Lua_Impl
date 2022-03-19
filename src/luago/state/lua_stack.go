@@ -20,7 +20,8 @@ func newLuaStack(size int) *luaStack{
 //不满足,则进行扩容,这里是2倍扩容
 func (self *luaStack) check(n int){
 	free := len(self.slots) - self.top
-	for i := free; i<len(self.slots)*2; i++{
+	newN := len(self.slots) * 2
+	for i := free; i<newN; i++{
 		self.slots = append(self.slots,nil)
 	}
 }

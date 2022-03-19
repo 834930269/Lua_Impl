@@ -47,4 +47,16 @@ type LuaState interface {
 	Len(idx int)
 	//string的concat方法
 	Concat(n int)
+
+	/*get function (Lua -> stack)*/
+	NewTable()
+	CreateTable(nArr, nRec int)
+	GetTable(idx int) 						LuaType
+	GetField(idx int,k string)				LuaType
+	GetI(idx int,i int64)					LuaType
+
+	/*set function (stack -> Lua)*/
+	SetTable(idx int)
+	SetField(idx int, k string)
+	SetI(idx int, n int64)
 }
