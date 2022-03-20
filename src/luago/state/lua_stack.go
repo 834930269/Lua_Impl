@@ -3,9 +3,16 @@ package state
 //这个类中定义了对Lua栈的所有操作
 
 //定义Lua栈
+//当lua进行到函数阶段后,所有的操作都从luaState里的一个stack变成每个函数一个stack
+//而函数与函数之间形成了链表
 type luaStack struct{
-	slots []luaValue		//栈中每个元素都是luaValue(类似C中union)
-	top int
+	slots 		[]luaValue		//栈中每个元素都是luaValue(类似C中union)
+	top 		int
+	// 下面是新增加的字段
+	prev 		*luaStack
+	closure		*closure
+	varargs		[]luaValue
+	pc			int
 }
 
 //创建一个新的luaStack
@@ -89,3 +96,24 @@ func (self *luaStack) reverse(from,to int){
 	}
 }
 
+//从栈顶pop出N个
+func (self *luaStack) popN(n int) []luaValue{
+	vals := make([]luaValue,n)
+	for i:=n-1;i>=0;i-- {
+		vals[i] = self.pop()
+	}
+	return vals
+}
+
+//向栈顶push n个LuaValue
+func (self *luaStack) pushN(vals []luaValue,n int){
+	nVals := len(vals)
+	if n<0 {n = nVals}
+	for i := 0; i < n; i++ {
+		if i < nVals {
+			self.push(vals[i])
+		} else {
+			self.push(nil)
+		}
+	}
+}

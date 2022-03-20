@@ -5,25 +5,7 @@ import "io/ioutil"
 import "os"
 import "luago/binchunk"
 import . "luago/vm"
-import . "luago/api"
 import "luago/state"
-
-func luaMain(proto *binchunk.Prototype){
-	nRegs := int(proto.MaxStackSize)
-	ls := state.New(nRegs+8,proto)
-	ls.SetTop(nRegs)
-	for{
-		pc := ls.PC()					//获取指令pc位置
-		inst := Instruction(ls.Fetch())	//从指令流中获取一条指令
-		if inst.OpCode() != OP_RETURN {	//不是Return就继续
-			inst.Execute(ls)			//执行虚拟机第一条指令
-			fmt.Printf("[%02d] %s ",pc+1,inst.OpName())
-			printStack(ls)
-		} else {
-			break
-		}
-	}
-}
 
 //简化版的模拟读取chunk
 func main(){
@@ -31,10 +13,10 @@ func main(){
 		fmt.Printf("\nLua字节流测试\n")
 		data,err := ioutil.ReadFile(os.Args[1])
 		if err != nil { panic(err) }
-		proto := binchunk.Undump(data)
-		list(proto)
-		fmt.Printf("\nLua字节流指令执行测试\n")
-		luaMain(proto)
+		ls := state.New()
+		ls.Load(data,os.Args[1],"b")
+		ls.Call(0,0)
+		ls.PrintStack()
 	}
 }
 
@@ -153,23 +135,4 @@ func printOperands(i Instruction) {
 		ax := i.Ax()
 		fmt.Printf("%d", -1-ax)
 	}
-}
-
-
-func printStack(ls LuaState) {
-	top := ls.GetTop()
-	for i := 1; i <= top; i++ {
-		t := ls.Type(i)
-		switch t {
-		case LUA_TBOOLEAN:
-			fmt.Printf("[%t]", ls.ToBoolean(i))
-		case LUA_TNUMBER:
-			fmt.Printf("[%g]", ls.ToNumber(i))
-		case LUA_TSTRING:
-			fmt.Printf("[%q]", ls.ToString(i))
-		default: // other values
-			fmt.Printf("[%s]", ls.TypeName(t))
-		}
-	}
-	fmt.Println()
 }
