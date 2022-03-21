@@ -3,6 +3,8 @@ package api
 type LuaType = int
 type ArithOp = int
 type CompareOp = int	
+/*-------GO函数渗透部分--------*/
+type GoFunction func(LuaState) int
 
 type LuaState interface {
 	/* 基础栈操作 */
@@ -63,4 +65,15 @@ type LuaState interface {
 	Load(chunk []byte,chunkName,mode string)int
 	Call(nArgs,nResults int)
 	PrintStack()
+
+	/*Go函数部分*/
+	PushGoFunction(f GoFunction)
+	IsGoFunction(idx int) 					bool
+	ToGoFunction(idx int) 					GoFunction
+
+	/*操作全局变量*/
+	PushGlobalTable()
+	GetGlobal(name string) 					LuaType
+	SetGlobal(name string)
+	Register(name string,f GoFunction)
 }

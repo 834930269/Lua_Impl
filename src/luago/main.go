@@ -6,6 +6,7 @@ import "os"
 import "luago/binchunk"
 import . "luago/vm"
 import "luago/state"
+import . "luago/api"
 
 //简化版的模拟读取chunk
 func main(){
@@ -14,9 +15,9 @@ func main(){
 		data,err := ioutil.ReadFile(os.Args[1])
 		if err != nil { panic(err) }
 		ls := state.New()
+		ls.Register("print",print) //注册print函数
 		ls.Load(data,os.Args[1],"b")
 		ls.Call(0,0)
-		ls.PrintStack()
 	}
 }
 
@@ -135,4 +136,22 @@ func printOperands(i Instruction) {
 		ax := i.Ax()
 		fmt.Printf("%d", -1-ax)
 	}
+}
+
+func print(ls LuaState) int {
+	nArgs := ls.GetTop()
+	for i := 1; i <= nArgs; i++ {
+		if ls.IsBoolean(i) {
+			fmt.Printf("%t",ls.ToBoolean(i))
+		} else if ls.IsString(i){
+			fmt.Print(ls.ToString(i))
+		} else {
+			fmt.Print(ls.TypeName(ls.Type(i)))
+		}
+		if i < nArgs {
+			fmt.Print("\t")
+		}
+	}
+	fmt.Println()
+	return 0
 }

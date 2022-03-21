@@ -6,7 +6,8 @@ import . "luago/api"
 //LuaState的实现类
 //关于栈的动作全部放回到closure
 type luaState struct{
-	stack *luaStack
+	stack 	 *luaStack
+	registry *luaTable	//注册表,
 }
 
 func (self *luaState) PrintStack() {
@@ -28,9 +29,13 @@ func (self *luaState) PrintStack() {
 }
 
 func New() *luaState{
-	return &luaState{
-		stack: newLuaStack(20),
-	}
+	registry := newLuaTable(0,0)	//注册表,注册表本身是一个表,但是全局表也是一个表,放在注册表的LUA_RIDX_GLOBALS下
+	registry.put(LUA_RIDX_GLOBALS,newLuaTable(0,0))	//全局环境
+
+	ls := &luaState{registry:registry}
+	ls.pushLuaStack(newLuaStack(LUA_MINSTACK,ls))
+
+	return ls
 }
 
 //向栈顶推入一个lua栈
@@ -45,4 +50,6 @@ func (self *luaState) popLuaStack() {
 	self.stack = stack.prev
 	stack.prev = nil 
 }
+
+
 

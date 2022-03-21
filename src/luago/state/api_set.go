@@ -1,5 +1,7 @@
 package state
 
+import . "luago/api"
+
 // [-2, +0, e]
 // http://www.lua.org/manual/5.3/manual.html#lua_settable
 func (self *luaState) SetTable(idx int) {
@@ -33,4 +35,16 @@ func (self *luaState) setTable(t, k, v luaValue) {
 	}
 
 	panic("not a table!")
+}
+
+//向全局表中放置内容
+func (self *luaState) SetGlobal(name string) {
+	t := self.registry.get(LUA_RIDX_GLOBALS)
+	v := self.stack.pop()
+	self.setTable(t,name,v)
+}
+
+func (self *luaState) Register(name string,f GoFunction) {
+	self.PushGoFunction(f)
+	self.SetGlobal(name)
 }

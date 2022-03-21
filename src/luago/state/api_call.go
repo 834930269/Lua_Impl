@@ -1,6 +1,5 @@
 package state 
 
-import "fmt"
 import "luago/binchunk"
 import "luago/vm"
 
@@ -24,9 +23,11 @@ func (self *luaState) Load(chunk []byte, chunkName, mode string) int {
 func (self *luaState) Call(nArgs, nResults int) {
 	val := self.stack.get(-(nArgs + 1))
 	if c, ok := val.(*closure); ok {
-		fmt.Printf("call %s<%d,%d>\n", c.proto.Source,
-			c.proto.LineDefined, c.proto.LastLineDefined)
-		self.callLuaClosure(nArgs, nResults, c)
+		if c.proto != nil {	//如果proto是空的话,代表是原生语言的函数,可以直接进入下个else
+			self.callLuaClosure(nArgs, nResults, c)
+		} else {	//调用go函数,如果失败,则没有函数
+			self.callGoClosure(nArgs,nResults,c)
+		}
 	} else {
 		panic("not function!")
 	}
@@ -38,7 +39,7 @@ func (self *luaState) callLuaClosure(nArgs,nResults int,c *closure) {
 	nParams := int(c.proto.NumParams)
 	isVararg := c.proto.IsVararg == 1	//是否是可变长
 
-	newStack := newLuaStack(nRegs + 20)	//进行适当扩大(为了预留少量栈空间)
+	newStack := newLuaStack(nRegs + 20,self)	//进行适当扩大(为了预留少量栈空间)
 	newStack.closure = c
 
 	//调用栈创建好了后,将参数一次性从当前栈pop出来,然后压入新的调用栈中
@@ -74,5 +75,24 @@ func (self *luaState) runLuaClosure(){
 		if inst.OpCode() == vm.OP_RETURN {
 			break
 		}
+	}
+}
+
+//调用Go函数
+func (self *luaState) callGoClosure(nArgs,nResults int,c *closure) {
+	newStack := newLuaStack(nArgs + 20,self)	//预留大小
+	newStack.closure = c
+
+	args := self.stack.popN(nArgs)
+	newStack.pushN(args,nArgs)
+	self.stack.pop()
+	self.pushLuaStack(newStack)
+	r := c.goFunc(self)
+	self.popLuaStack()
+
+	if nResults != 0 {
+		results := newStack.popN(r)
+		self.stack.check(len(results))
+		self.stack.pushN(results,nResults)
 	}
 }

@@ -157,3 +157,22 @@ func (self *luaState) ToStringX(idx int) (string, bool) {
 		return "", false
 	}
 }
+
+//是否是Go函数
+func (self *luaState) IsGoFunction(idx int) bool{
+	val := self.stack.get(idx)
+	if c, ok := val.(*closure); ok{
+		return c.goFunc != nil
+	}
+	return false
+}
+
+//转换成Go函数
+func (self *luaState) ToGoFunction(idx int) GoFunction{
+	val := self.stack.get(idx)
+	if c, ok := val.(*closure); ok {
+		return c.goFunc
+	}
+	return nil
+}
+
